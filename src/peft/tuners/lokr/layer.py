@@ -280,7 +280,8 @@ class LoKrLayer(nn.Module, LycorisLayer):
         if apply_rank_dropout:
             drop = (torch.rand(weight.size(0)) > rank_dropout).float()
             drop = drop.view(-1, *[1] * len(weight.shape[1:])).to(weight.device)
-            if self.rank_dropout_scale[adapter_name]:
+            # Same empty-mask guard as LoHa: scaling by the mean is undefined when every row is dropped.
+            if self.rank_dropout_scale[adapter_name] and drop.any():
                 drop /= drop.mean()
             weight *= drop
 
